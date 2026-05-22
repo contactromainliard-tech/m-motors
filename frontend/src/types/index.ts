@@ -36,4 +36,4 @@ export interface VehicleFilters {
 }
 export interface LoginData { email: string; password: string; }
 export interface RegisterData { email: string; password: string; firstName: string; lastName: string; phone?: string; }
-export interface VehicleFilters { type?: string; brand?: string; maxPrice?: number; }
+export interface VehicleFilters { type?: string; brand?: string; maxPrice?: number; maxKilometrage?: number; }

@@ -45,6 +45,7 @@ const MyDossiersPage: React.FC = () => {
         switch (status) {
             case 'approved': return 'bg-green-100 text-green-700';
             case 'rejected': return 'bg-red-100 text-red-700';
+            case 'in_progress': return 'bg-blue-100 text-blue-700';
             default: return 'bg-yellow-100 text-yellow-700';
         }
     };
@@ -54,9 +55,10 @@ const MyDossiersPage: React.FC = () => {
      */
     const getStatusLabel = (status: string): string => {
         switch (status) {
-            case 'approved': return 'Validé';
-            case 'rejected': return 'Refusé';
-            default: return 'En cours d\'examen';
+            case 'approved': return 'Valide';
+            case 'rejected': return 'Refuse';
+            case 'in_progress': return 'En cours de traitement';
+            default: return 'En attente';
         }
     };
 

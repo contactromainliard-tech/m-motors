@@ -89,8 +89,8 @@ class DossierController extends AbstractController
         $data = json_decode($request->getContent(), true);
         $status = $data["status"] ?? null;
 
-        if (!in_array($status, ["approved", "rejected"])) {
-            return $this->json(["message" => "Statut invalide"], 400);
+        if (!in_array($status, ["approved", "rejected", "in_progress"])) {
+        return $this->json(["message" => "Statut invalide"], 400);
         }
 
         $dossier->setStatus($status);

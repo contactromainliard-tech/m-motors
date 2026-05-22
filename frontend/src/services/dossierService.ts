@@ -18,7 +18,7 @@ export const getAllDossiers = async (): Promise<Dossier[]> => {
 
 export const validateDossier = async (
   id: number,
-  status: "approved" | "rejected",
+  status: "approved" | "rejected" | "in_progress",
   comment?: string
 ): Promise<Dossier> => {
   const response = await api.patch(`/dossiers/${id}/validate`, { status, comment });

@@ -109,14 +109,16 @@ const AdminPage: React.FC = () => {
         switch (status) {
             case 'approved': return 'bg-green-100 text-green-700';
             case 'rejected': return 'bg-red-100 text-red-700';
+            case 'in_progress': return 'bg-blue-100 text-blue-700';
             default: return 'bg-yellow-100 text-yellow-700';
         }
     };
 
     const getStatusLabel = (status: string): string => {
         switch (status) {
-            case 'approved': return 'Validé';
-            case 'rejected': return 'Refusé';
+            case 'approved': return 'Valide';
+            case 'rejected': return 'Refuse';
+            case 'in_progress': return 'En cours de traitement';
             default: return 'En attente';
         }
     };
@@ -150,8 +152,8 @@ const AdminPage: React.FC = () => {
                     <button
                         onClick={() => setActiveTab('vehicles')}
                         className={`pb-3 px-1 text-sm font-medium border-b-2 transition ${activeTab === 'vehicles'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-gray-500 hover:text-primary'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-gray-500 hover:text-primary'
                             }`}
                     >
                         Véhicules ({vehicles.length})
@@ -159,8 +161,8 @@ const AdminPage: React.FC = () => {
                     <button
                         onClick={() => setActiveTab('dossiers')}
                         className={`pb-3 px-1 text-sm font-medium border-b-2 transition ${activeTab === 'dossiers'
-                                ? 'border-primary text-primary'
-                                : 'border-transparent text-gray-500 hover:text-primary'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-gray-500 hover:text-primary'
                             }`}
                     >
                         Dossiers ({dossiers.length})
@@ -300,8 +302,8 @@ const AdminPage: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`px-2 py-1 rounded text-xs font-medium ${vehicle.type === 'sale'
-                                                        ? 'bg-blue-100 text-blue-700'
-                                                        : 'bg-purple-100 text-purple-700'
+                                                    ? 'bg-blue-100 text-blue-700'
+                                                    : 'bg-purple-100 text-purple-700'
                                                     }`}>
                                                     {vehicle.type === 'sale' ? 'Achat' : 'Location'}
                                                 </span>
@@ -363,6 +365,28 @@ const AdminPage: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-3">
                                                 {dossier.status === 'pending' && (
+                                                    <div className="flex gap-2">
+                                                        <button
+                                                            onClick={() => handleValidateDossier(dossier.id, 'in_progress')}
+                                                            className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:opacity-90 transition"
+                                                        >
+                                                            En cours
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleValidateDossier(dossier.id, 'approved')}
+                                                            className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:opacity-90 transition"
+                                                        >
+                                                            Valider
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleValidateDossier(dossier.id, 'rejected')}
+                                                            className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:opacity-90 transition"
+                                                        >
+                                                            Refuser
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {dossier.status === 'in_progress' && (
                                                     <div className="flex gap-2">
                                                         <button
                                                             onClick={() => handleValidateDossier(dossier.id, 'approved')}
