@@ -6,6 +6,7 @@ export const getVehicles = async (filters?: VehicleFilters): Promise<Vehicle[]> 
   if (filters?.type) params.append("type", filters.type);
   if (filters?.brand) params.append("brand", filters.brand);
   if (filters?.maxPrice) params.append("maxPrice", filters.maxPrice.toString());
+  if (filters?.maxKilometrage) params.append("maxKilometrage", filters.maxKilometrage.toString());
   const response = await api.get(`/vehicles?${params.toString()}`);
   return response.data;
 };

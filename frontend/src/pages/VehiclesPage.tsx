@@ -133,6 +133,14 @@ const VehiclesPage: React.FC = () => {
                         onChange={handleFilterChange}
                         className="border border-gray-300 rounded px-3 py-2 text-sm w-44 focus:outline-none focus:border-primary"
                     />
+                    <input
+                        type="number"
+                        name="maxKilometrage"
+                        placeholder="Km max"
+                        value={filters.maxKilometrage || ''}
+                        onChange={handleFilterChange}
+                        className="border border-gray-300 rounded px-3 py-2 text-sm w-44 focus:outline-none focus:border-primary"
+                    />
 
                     <button
                         type="submit"

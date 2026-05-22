@@ -22,22 +22,27 @@ class VehicleController extends AbstractController
     #[Route("", name: "list", methods: ["GET"])]
     public function list(Request $request): JsonResponse
     {
-        $type = $request->query->get("type");
-        $brand = $request->query->get("brand");
-        $maxPrice = $request->query->get("maxPrice");
+    $type = $request->query->get("type");
+    $brand = $request->query->get("brand");
+    $maxPrice = $request->query->get("maxPrice");
+    $maxKilometrage = $request->query->get("maxKilometrage");
 
-        $criteria = ["isAvailable" => true];
-        if ($type) $criteria["type"] = $type;
-        if ($brand) $criteria["brand"] = $brand;
+    $criteria = ["isAvailable" => true];
+    if ($type) $criteria["type"] = $type;
+    if ($brand) $criteria["brand"] = $brand;
 
-        $vehicles = $this->vehicleRepository->findBy($criteria);
+    $vehicles = $this->vehicleRepository->findBy($criteria);
 
-        if ($maxPrice) {
-            $vehicles = array_filter($vehicles, fn($v) => $v->getPrice() <= (float) $maxPrice);
-        }
+    if ($maxPrice) {
+        $vehicles = array_filter($vehicles, fn($v) => $v->getPrice() <= (float) $maxPrice);
+    }
 
-        $data = array_map(fn($vehicle) => $this->formatVehicle($vehicle), array_values($vehicles));
-        return $this->json($data);
+    if ($maxKilometrage) {
+        $vehicles = array_filter($vehicles, fn($v) => $v->getKilometrage() <= (int) $maxKilometrage);
+    }
+
+    $data = array_map(fn($vehicle) => $this->formatVehicle($vehicle), array_values($vehicles));
+    return $this->json($data);
     }
 
     #[Route("/{id}", name: "show", methods: ["GET"])]
