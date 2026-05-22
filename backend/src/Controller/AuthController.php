@@ -62,4 +62,55 @@ class AuthController extends AbstractController
             ]
         ], 201);
     }
+        /**
+     * Retourne les informations du profil de l'utilisateur connecté.
+     */
+    #[Route("/profile", name: "profile", methods: ["GET"])]
+    public function profile(): JsonResponse
+    {
+        $user = $this->getUser();
+        return $this->json([
+            "id" => $user->getId(),
+            "email" => $user->getEmail(),
+            "firstName" => $user->getFirstName(),
+            "lastName" => $user->getLastName(),
+            "phone" => $user->getPhone(),
+            "address" => $user->getAddress(),
+            "city" => $user->getCity(),
+            "zipCode" => $user->getZipCode(),
+        ]);
+    }
+
+    /**
+     * Met à jour les informations personnelles de l'utilisateur connecté.
+     */
+    #[Route("/profile", name: "profile_update", methods: ["PUT"])]
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data["firstName"])) $user->setFirstName($data["firstName"]);
+        if (isset($data["lastName"])) $user->setLastName($data["lastName"]);
+        if (isset($data["phone"])) $user->setPhone($data["phone"]);
+        if (isset($data["address"])) $user->setAddress($data["address"]);
+        if (isset($data["city"])) $user->setCity($data["city"]);
+        if (isset($data["zipCode"])) $user->setZipCode($data["zipCode"]);
+
+        $this->entityManager->flush();
+
+        return $this->json([
+            "message" => "Profil mis a jour",
+            "user" => [
+                "id" => $user->getId(),
+                "email" => $user->getEmail(),
+                "firstName" => $user->getFirstName(),
+                "lastName" => $user->getLastName(),
+                "phone" => $user->getPhone(),
+                "address" => $user->getAddress(),
+                "city" => $user->getCity(),
+                "zipCode" => $user->getZipCode(),
+            ]
+        ]);
+    }
 }

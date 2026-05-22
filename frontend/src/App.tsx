@@ -1,12 +1,13 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import VehiclesPage from './pages/VehiclesPage';
-import VehicleDetailPage from './pages/VehicleDetailPage';
-import MyDossiersPage from './pages/MyDossiersPage';
-import AdminPage from './pages/AdminPage';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import VehiclesPage from "./pages/VehiclesPage";
+import VehicleDetailPage from "./pages/VehicleDetailPage";
+import MyDossiersPage from "./pages/MyDossiersPage";
+import AdminPage from "./pages/AdminPage";
+import AccountPage from "./pages/AccountPage";
 
 /**
  * Composant de route protégée - redirige vers /login si non authentifié.
@@ -28,7 +29,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 /**
- * Configuration des routes de l'application M-Motors.
+ * Configuration des routes de l application M-Motors.
  */
 const AppRoutes: React.FC = () => {
   return (
@@ -46,6 +47,11 @@ const AppRoutes: React.FC = () => {
           <MyDossiersPage />
         </PrivateRoute>
       } />
+      <Route path="/account" element={
+        <PrivateRoute>
+          <AccountPage />
+        </PrivateRoute>
+      } />
       <Route path="/admin" element={
         <AdminRoute>
           <AdminPage />
@@ -57,8 +63,8 @@ const AppRoutes: React.FC = () => {
 };
 
 /**
- * Composant racine de l'application M-Motors.
- * Fournit le contexte d'authentification et le router.
+ * Composant racine de l application M-Motors.
+ * Fournit le contexte d authentification et le router.
  */
 const App: React.FC = () => {
   return (
