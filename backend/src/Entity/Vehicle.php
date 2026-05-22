@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Entité représentant un véhicule du catalogue M-Motors.
@@ -27,24 +28,32 @@ class Vehicle
      * Marque du véhicule (ex: Renault, Peugeot).
      */
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'La marque est obligatoire')]
+    #[Assert\Length(max: 100)]
     private ?string $brand = null;
 
     /**
      * Modèle du véhicule (ex: Clio, 308).
      */
     #[ORM\Column(length: 100)]
+    #[Assert\NotBlank(message: 'Le modèle est obligatoire')]
+    #[Assert\Length(max: 100)]
     private ?string $model = null;
 
     /**
      * Année de mise en circulation du véhicule.
      */
     #[ORM\Column]
+    #[Assert\NotBlank]
+    #[Assert\Range(min: 1900, max: 2030)]
     private ?int $year = null;
 
     /**
      * Kilométrage du véhicule.
      */
     #[ORM\Column]
+    #[Assert\NotBlank]
+    #[Assert\PositiveOrZero]
     private ?int $kilometrage = null;
 
     /**
@@ -52,12 +61,15 @@ class Vehicle
      * Pour la location, il s'agit du loyer mensuel.
      */
     #[ORM\Column]
+    #[Assert\NotBlank]
+    #[Assert\Positive]
     private ?float $price = null;
 
     /**
      * Type du véhicule : "sale" pour achat, "rental" pour location.
      */
     #[ORM\Column(length: 20)]
+    #[Assert\Choice(choices: ['sale', 'rental'], message: 'Le type doit être sale ou rental')]
     private ?string $type = null;
 
     /**

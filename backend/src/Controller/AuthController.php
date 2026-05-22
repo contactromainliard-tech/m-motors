@@ -10,58 +10,76 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route("/api/auth", name: "api_auth_")]
 class AuthController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private UserPasswordHasherInterface $passwordHasher,
-        private UserRepository $userRepository
-    ) {}
+    private EntityManagerInterface $entityManager,
+    private UserPasswordHasherInterface $passwordHasher,
+    private UserRepository $userRepository,
+    private ValidatorInterface $validator
+) {}
 
     #[Route("/register", name: "register", methods: ["POST"])]
-    public function register(Request $request): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
+public function register(Request $request): JsonResponse
+{
+    $data = json_decode($request->getContent(), true);
 
-        if (!$data) {
-            return $this->json(["message" => "Donnees invalides"], 400);
-        }
-
-        if (empty($data["email"]) || empty($data["password"]) || empty($data["firstName"]) || empty($data["lastName"])) {
-            return $this->json(["message" => "Champs obligatoires manquants"], 422);
-        }
-
-        $existingUser = $this->userRepository->findOneBy(["email" => $data["email"]]);
-        if ($existingUser) {
-            return $this->json(["message" => "Email deja utilise"], 409);
-        }
-
-        $user = new User();
-        $user->setEmail($data["email"]);
-        $user->setFirstName($data["firstName"]);
-        $user->setLastName($data["lastName"]);
-        $user->setPhone($data["phone"] ?? null);
-        $user->setIsAdmin(false);
-        $user->setRoles(["ROLE_USER"]);
-
-        $hashedPassword = $this->passwordHasher->hashPassword($user, $data["password"]);
-        $user->setPassword($hashedPassword);
-
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
-
-        return $this->json([
-            "message" => "Compte cree avec succes",
-            "user" => [
-                "id" => $user->getId(),
-                "email" => $user->getEmail(),
-                "firstName" => $user->getFirstName(),
-                "lastName" => $user->getLastName(),
-            ]
-        ], 201);
+    if (!$data) {
+        return $this->json(["message" => "Donnees invalides"], 400);
     }
+
+    if (empty($data["email"]) || empty($data["password"]) || empty($data["firstName"]) || empty($data["lastName"])) {
+        return $this->json(["message" => "Champs obligatoires manquants"], 422);
+    }
+
+    // Validation email
+    if (!filter_var($data["email"], FILTER_VALIDATE_EMAIL)) {
+        return $this->json(["message" => "Format email invalide"], 422);
+    }
+
+    // Validation mot de passe
+    if (strlen($data["password"]) < 8) {
+        return $this->json(["message" => "Le mot de passe doit contenir au moins 8 caracteres"], 422);
+    }
+
+    // Validation longueur prénom/nom
+    if (strlen($data["firstName"]) < 2 || strlen($data["lastName"]) < 2) {
+        return $this->json(["message" => "Le prenom et le nom doivent contenir au moins 2 caracteres"], 422);
+    }
+
+    // Vérification email dupliqué
+    $existingUser = $this->userRepository->findOneBy(["email" => $data["email"]]);
+    if ($existingUser) {
+        return $this->json(["message" => "Email deja utilise"], 409);
+    }
+
+    $user = new User();
+    $user->setEmail($data["email"]);
+    $user->setFirstName($data["firstName"]);
+    $user->setLastName($data["lastName"]);
+    $user->setPhone($data["phone"] ?? null);
+    $user->setIsAdmin(false);
+    $user->setRoles(["ROLE_USER"]);
+
+    $hashedPassword = $this->passwordHasher->hashPassword($user, $data["password"]);
+    $user->setPassword($hashedPassword);
+
+    $this->entityManager->persist($user);
+    $this->entityManager->flush();
+
+    return $this->json([
+        "message" => "Compte cree avec succes",
+        "user" => [
+            "id" => $user->getId(),
+            "email" => $user->getEmail(),
+            "firstName" => $user->getFirstName(),
+            "lastName" => $user->getLastName(),
+        ]
+    ], 201);
+}
         /**
      * Retourne les informations du profil de l'utilisateur connecté.
      */

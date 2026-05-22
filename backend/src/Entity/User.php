@@ -6,6 +6,7 @@ use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Validator\Constraints as Assert;
 
 /**
  * Entité représentant un utilisateur de l'application M-Motors.
@@ -28,6 +29,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * Adresse email de l'utilisateur, utilisée comme identifiant de connexion.
      */
     #[ORM\Column(length: 180)]
+    #[Assert\NotBlank(message: 'L email est obligatoire')]
+    #[Assert\Email(message: 'L email {{ value }} n est pas valide')]
     private ?string $email = null;
 
     /**
@@ -43,19 +46,25 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      *
      * @var string
      */
-    #[ORM\Column]
+    #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Le mot de passe est obligatoire')]
+    #[Assert\Length(min: 8, minMessage: 'Le mot de passe doit contenir au moins {{ limit }} caractères')]
     private ?string $password = null;
 
     /**
      * Prénom de l'utilisateur.
      */
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Le prénom est obligatoire')]
+    #[Assert\Length(min: 2, max: 100, minMessage: 'Le prénom doit contenir au moins {{ limit }} caractères')]
     private ?string $firstName = null;
 
     /**
      * Nom de famille de l'utilisateur.
      */
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire')]
+    #[Assert\Length(min: 2, max: 100, minMessage: 'Le nom doit contenir au moins {{ limit }} caractères')]
     private ?string $lastName = null;
 
     /**
