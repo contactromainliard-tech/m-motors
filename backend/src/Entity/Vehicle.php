@@ -5,6 +5,8 @@ namespace App\Entity;
 use App\Repository\VehicleRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 
 /**
  * Entité représentant un véhicule du catalogue M-Motors.
@@ -75,7 +77,21 @@ class Vehicle
      */
     #[ORM\Column]
     private ?bool $isAvailable = null;
+    /**
+     * Liste des dossiers associés à ce véhicule.
+     */
+    #[ORM\OneToMany(mappedBy: 'vehicle', targetEntity: Dossier::class)]
+    private Collection $dossiers;
 
+    public function __construct()
+    {
+        $this->dossiers = new ArrayCollection();
+    }
+
+    public function getDossiers(): Collection
+    {
+        return $this->dossiers;
+    }
     public function getId(): ?int
     {
         return $this->id;

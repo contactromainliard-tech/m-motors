@@ -143,9 +143,9 @@ class VehicleController extends AbstractController
      * Upload d une photo pour un véhicule (admin uniquement).
      */
     #[Route("/{id}/upload-photo", name: "upload_photo", methods: ["POST"])]
-#[IsGranted("ROLE_ADMIN")]
-public function uploadPhoto(int $id, Request $request): JsonResponse
-{
+    #[IsGranted("ROLE_ADMIN")]
+    public function uploadPhoto(int $id, Request $request): JsonResponse
+    {
     try {
         $vehicle = $this->vehicleRepository->find($id);
         if (!$vehicle) {
@@ -182,5 +182,30 @@ public function uploadPhoto(int $id, Request $request): JsonResponse
         } catch (\Exception $e) {
         return $this->json(["message" => $e->getMessage()], 500);
         }
+    }
+    /**
+     * Supprime un véhicule du catalogue (admin uniquement).
+     * Bloque la suppression si des dossiers sont associés.
+     */
+    #[Route("/{id}", name: "delete", methods: ["DELETE"])]
+    #[IsGranted("ROLE_ADMIN")]
+    public function delete(int $id): JsonResponse
+    {
+        $vehicle = $this->vehicleRepository->find($id);
+        if (!$vehicle) {
+            return $this->json(["message" => "Vehicule non trouve"], 404);
+        }
+
+        // Vérification qu il n y a pas de dossiers associés
+        if (!$vehicle->getDossiers()->isEmpty()) {
+            return $this->json([
+                "message" => "Impossible de supprimer ce vehicule car il a des dossiers associes."
+            ], 409);
+        }
+
+        $this->entityManager->remove($vehicle);
+        $this->entityManager->flush();
+
+        return $this->json(["message" => "Vehicule supprime avec succes"]);
     }
 }

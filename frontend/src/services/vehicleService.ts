@@ -59,3 +59,9 @@ export const uploadVehiclePhoto = async (id: number, formData: FormData): Promis
   });
   return response.data.vehicle;
 };
+/**
+ * Supprime un véhicule du catalogue (admin uniquement).
+ */
+export const deleteVehicle = async (id: number): Promise<void> => {
+  await api.delete(`/vehicles/${id}`);
+};

@@ -31,16 +31,16 @@ class DocumentController extends AbstractController
      * Accessible au client propriétaire du dossier.
      */
     #[Route("/upload/{dossierId}", name: "upload", methods: ["POST"])]
-    #[IsGranted("ROLE_USER")]
-    public function upload(int $dossierId, Request $request): JsonResponse
-    {
+#[IsGranted("ROLE_USER")]
+public function upload(int $dossierId, Request $request): JsonResponse
+{
+    try {
         $dossier = $this->dossierRepository->find($dossierId);
 
         if (!$dossier) {
             return $this->json(["message" => "Dossier non trouve"], 404);
         }
 
-        // Vérification que le dossier appartient au client connecté
         if ($dossier->getClient()->getId() !== $this->getUser()->getId()) {
             return $this->json(["message" => "Acces refuse"], 403);
         }
@@ -50,13 +50,11 @@ class DocumentController extends AbstractController
             return $this->json(["message" => "Aucun fichier fourni"], 400);
         }
 
-        // Validation du type de fichier
         $allowedMimes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
         if (!in_array($file->getMimeType(), $allowedMimes)) {
             return $this->json(["message" => "Format non accepte. PDF, JPG et PNG uniquement."], 400);
         }
 
-        // Validation de la taille (10 Mo max)
         if ($file->getSize() > 10 * 1024 * 1024) {
             return $this->json(["message" => "Fichier trop volumineux. 10 Mo maximum."], 400);
         }
@@ -67,7 +65,6 @@ class DocumentController extends AbstractController
             $documentType = "other";
         }
 
-        // Génération d un nom unique
         $filename = uniqid("doc_") . "." . $file->getClientOriginalExtension();
         $uploadDir = $this->getParameter("kernel.project_dir") . "/public/uploads/documents";
         $file->move($uploadDir, $filename);
@@ -88,7 +85,10 @@ class DocumentController extends AbstractController
             "message" => "Document uploade avec succes",
             "document" => $this->formatDocument($document)
         ], 201);
+    } catch (\Exception $e) {
+        return $this->json(["message" => $e->getMessage()], 500);
     }
+}
 
     /**
      * Retourne la liste des documents d un dossier.

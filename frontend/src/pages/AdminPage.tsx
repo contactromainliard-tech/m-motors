@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Vehicle, Dossier } from '../types';
-import { getVehicles, createVehicle, toggleVehicleType, uploadVehiclePhoto } from '../services/vehicleService';
+import { getVehicles, createVehicle, toggleVehicleType, uploadVehiclePhoto, updateVehicle, deleteVehicle } from '../services/vehicleService';
 import { getAllDossiers, validateDossier } from '../services/dossierService';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,6 +26,12 @@ const AdminPage: React.FC = () => {
     const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [formError, setFormError] = useState<string | null>(null);
     const [formSuccess, setFormSuccess] = useState(false);
+
+    // Formulaire modification véhicule
+    const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+    const [editForm, setEditForm] = useState({
+        brand: '', model: '', year: '', kilometrage: '', price: '', type: 'sale', description: '',
+    });
 
     useEffect(() => {
         if (!isAuthenticated || !isAdmin) {
@@ -89,6 +95,59 @@ const AdminPage: React.FC = () => {
     };
 
     /**
+     * Prépare le formulaire de modification d'un véhicule.
+     */
+    const handleEditVehicle = (vehicle: Vehicle) => {
+        setEditingVehicle(vehicle);
+        setEditForm({
+            brand: vehicle.brand,
+            model: vehicle.model,
+            year: vehicle.year.toString(),
+            kilometrage: vehicle.kilometrage.toString(),
+            price: vehicle.price.toString(),
+            type: vehicle.type,
+            description: vehicle.description || '',
+        });
+    };
+
+    /**
+     * Soumet le formulaire de modification d'un véhicule.
+     */
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingVehicle) return;
+        setFormError(null);
+        try {
+            await updateVehicle(editingVehicle.id, {
+                brand: editForm.brand,
+                model: editForm.model,
+                year: Number(editForm.year),
+                kilometrage: Number(editForm.kilometrage),
+                price: Number(editForm.price),
+                type: editForm.type as 'sale' | 'rental',
+                description: editForm.description || undefined,
+            });
+            setEditingVehicle(null);
+            loadData();
+        } catch (err: any) {
+            setFormError(err.response?.data?.message || 'Erreur lors de la modification.');
+        }
+    };
+
+    /**
+     * Supprime un véhicule après confirmation.
+     */
+    const handleDeleteVehicle = async (vehicle: Vehicle) => {
+        if (!window.confirm(`Supprimer ${vehicle.brand} ${vehicle.model} ?`)) return;
+        try {
+            await deleteVehicle(vehicle.id);
+            loadData();
+        } catch (err: any) {
+            alert(err.response?.data?.message || 'Erreur lors de la suppression.');
+        }
+    };
+
+    /**
      * Bascule le type d'un véhicule entre location et vente.
      */
     const handleToggleType = async (id: number) => {
@@ -141,6 +200,107 @@ const AdminPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-100">
+            {/* Modal de modification de véhicule */}
+            {editingVehicle && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xl">
+                        <h3 className="font-semibold text-primary mb-4">
+                            Modifier {editingVehicle.brand} {editingVehicle.model}
+                        </h3>
+                        {formError && (
+                            <div className="bg-red-50 text-red-600 p-3 rounded mb-4 text-sm">{formError}</div>
+                        )}
+                        <form onSubmit={handleEditSubmit} className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm text-gray-700 mb-1">Marque</label>
+                                <input
+                                    type="text"
+                                    value={editForm.brand}
+                                    onChange={(e) => setEditForm({ ...editForm, brand: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-700 mb-1">Modèle</label>
+                                <input
+                                    type="text"
+                                    value={editForm.model}
+                                    onChange={(e) => setEditForm({ ...editForm, model: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-700 mb-1">Année</label>
+                                <input
+                                    type="number"
+                                    value={editForm.year}
+                                    onChange={(e) => setEditForm({ ...editForm, year: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-700 mb-1">Kilométrage</label>
+                                <input
+                                    type="number"
+                                    value={editForm.kilometrage}
+                                    onChange={(e) => setEditForm({ ...editForm, kilometrage: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-700 mb-1">Prix (€)</label>
+                                <input
+                                    type="number"
+                                    value={editForm.price}
+                                    onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm text-gray-700 mb-1">Type</label>
+                                <select
+                                    value={editForm.type}
+                                    onChange={(e) => setEditForm({ ...editForm, type: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                >
+                                    <option value="sale">Achat</option>
+                                    <option value="rental">Location LLD</option>
+                                </select>
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block text-sm text-gray-700 mb-1">Description</label>
+                                <input
+                                    type="text"
+                                    value={editForm.description}
+                                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                    className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                />
+                            </div>
+                            <div className="col-span-2 flex gap-3">
+                                <button
+                                    type="submit"
+                                    className="px-6 py-2 bg-primary text-white text-sm rounded hover:opacity-90 transition"
+                                >
+                                    Sauvegarder
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setEditingVehicle(null)}
+                                    className="px-6 py-2 border border-gray-300 text-gray-600 text-sm rounded hover:bg-gray-50 transition"
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
             {/* Navigation */}
             <nav className="bg-primary text-white px-8 py-4 flex justify-between items-center">
                 <h1 className="text-2xl font-bold cursor-pointer" onClick={() => navigate('/')}>
@@ -335,12 +495,26 @@ const AdminPage: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <button
-                                                    onClick={() => handleToggleType(vehicle.id)}
-                                                    className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition"
-                                                >
-                                                    Basculer en {vehicle.type === 'sale' ? 'Location' : 'Achat'}
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleEditVehicle(vehicle)}
+                                                        className="px-3 py-1 text-xs bg-primary text-white rounded hover:opacity-90 transition"
+                                                    >
+                                                        Modifier
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleToggleType(vehicle.id)}
+                                                        className="px-3 py-1 text-xs border border-gray-300 rounded hover:bg-gray-100 transition"
+                                                    >
+                                                        Basculer
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteVehicle(vehicle)}
+                                                        className="px-3 py-1 text-xs bg-red-500 text-white rounded hover:opacity-90 transition"
+                                                    >
+                                                        Supprimer
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
