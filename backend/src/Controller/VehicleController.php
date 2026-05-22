@@ -143,9 +143,10 @@ class VehicleController extends AbstractController
      * Upload d une photo pour un véhicule (admin uniquement).
      */
     #[Route("/{id}/upload-photo", name: "upload_photo", methods: ["POST"])]
-    #[IsGranted("ROLE_ADMIN")]
-    public function uploadPhoto(int $id, Request $request): JsonResponse
-    {
+#[IsGranted("ROLE_ADMIN")]
+public function uploadPhoto(int $id, Request $request): JsonResponse
+{
+    try {
         $vehicle = $this->vehicleRepository->find($id);
         if (!$vehicle) {
             return $this->json(["message" => "Vehicule non trouve"], 404);
@@ -178,5 +179,8 @@ class VehicleController extends AbstractController
             "photoUrl" => $photoUrl,
             "vehicle" => $this->formatVehicle($vehicle)
         ]);
+        } catch (\Exception $e) {
+        return $this->json(["message" => $e->getMessage()], 500);
+        }
     }
 }

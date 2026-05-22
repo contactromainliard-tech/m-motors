@@ -181,7 +181,7 @@ const VehiclesPage: React.FC = () => {
 
                             {vehicle.photoUrl ? (
                                 <img
-                                    src={vehicle.photoUrl}
+                                    src={`${process.env.REACT_APP_BASE_URL}${vehicle.photoUrl}`}
                                     alt={`${vehicle.brand} ${vehicle.model}`}
                                     className="w-full h-44 object-cover"
                                 />
