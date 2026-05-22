@@ -59,12 +59,14 @@ const VehiclesPage: React.FC = () => {
                 <div className="flex gap-3">
                     {isAuthenticated ? (
                         <>
-                            <button
-                                onClick={() => navigate('/my-dossiers')}
-                                className="px-4 py-2 text-sm border border-white rounded hover:bg-white hover:text-primary transition"
-                            >
-                                Mes dossiers
-                            </button>
+                            {!isAdmin && (
+                                <button
+                                    onClick={() => navigate('/my-dossiers')}
+                                    className="px-4 py-2 text-sm border border-white rounded hover:bg-white hover:text-primary transition"
+                                >
+                                    Mes dossiers
+                                </button>
+                            )}
                             {isAdmin && (
                                 <button
                                     onClick={() => navigate('/admin')}
