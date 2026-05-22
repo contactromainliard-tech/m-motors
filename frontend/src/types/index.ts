@@ -21,7 +21,7 @@ export interface Vehicle {
 export interface Dossier {
   id: number;
   type: "purchase" | "rental";
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "in_progress";
   createdAt: string;
   updatedAt?: string;
   comment?: string;

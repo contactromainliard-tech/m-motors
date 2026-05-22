@@ -91,9 +91,9 @@ const AdminPage: React.FC = () => {
     };
 
     /**
-     * Valide ou refuse un dossier client.
+     * Valide, met en cours de traitement ou refuse un dossier client.
      */
-    const handleValidateDossier = async (id: number, status: 'approved' | 'rejected') => {
+    const handleValidateDossier = async (id: number, status: 'approved' | 'rejected' | 'in_progress') => {
         const comment = status === 'rejected'
             ? window.prompt('Motif de refus (optionnel) :') || undefined
             : undefined;
@@ -105,6 +105,9 @@ const AdminPage: React.FC = () => {
         }
     };
 
+    /**
+     * Retourne les classes Tailwind selon le statut du dossier.
+     */
     const getStatusStyle = (status: string): string => {
         switch (status) {
             case 'approved': return 'bg-green-100 text-green-700';
@@ -114,10 +117,13 @@ const AdminPage: React.FC = () => {
         }
     };
 
+    /**
+     * Traduit le statut du dossier en français.
+     */
     const getStatusLabel = (status: string): string => {
         switch (status) {
-            case 'approved': return 'Valide';
-            case 'rejected': return 'Refuse';
+            case 'approved': return 'Validé';
+            case 'rejected': return 'Refusé';
             case 'in_progress': return 'En cours de traitement';
             default: return 'En attente';
         }
@@ -184,7 +190,7 @@ const AdminPage: React.FC = () => {
                             </button>
                         </div>
 
-                        {/* Formulaire d'ajout */}
+                        {/* Formulaire d'ajout de véhicule */}
                         {showForm && (
                             <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
                                 <h3 className="font-semibold text-primary mb-4">Nouveau véhicule</h3>
@@ -364,6 +370,7 @@ const AdminPage: React.FC = () => {
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
+                                                {/* Boutons d'action pour dossier en attente */}
                                                 {dossier.status === 'pending' && (
                                                     <div className="flex gap-2">
                                                         <button
@@ -386,6 +393,7 @@ const AdminPage: React.FC = () => {
                                                         </button>
                                                     </div>
                                                 )}
+                                                {/* Boutons d'action pour dossier en cours de traitement */}
                                                 {dossier.status === 'in_progress' && (
                                                     <div className="flex gap-2">
                                                         <button
