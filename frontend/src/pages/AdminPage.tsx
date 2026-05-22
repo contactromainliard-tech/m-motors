@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Vehicle, Dossier } from '../types';
-import { getVehicles, createVehicle, toggleVehicleType } from '../services/vehicleService';
+import { getVehicles, createVehicle, toggleVehicleType, uploadVehiclePhoto } from '../services/vehicleService';
 import { getAllDossiers, validateDossier } from '../services/dossierService';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,6 +23,7 @@ const AdminPage: React.FC = () => {
     const [vehicleForm, setVehicleForm] = useState({
         brand: '', model: '', year: '', kilometrage: '', price: '', type: 'sale', description: '',
     });
+    const [photoFile, setPhotoFile] = useState<File | null>(null);
     const [formError, setFormError] = useState<string | null>(null);
     const [formSuccess, setFormSuccess] = useState(false);
 
@@ -54,13 +55,13 @@ const AdminPage: React.FC = () => {
     };
 
     /**
-     * Soumet le formulaire d'ajout d'un véhicule.
+     * Soumet le formulaire d'ajout d'un véhicule avec photo optionnelle.
      */
     const handleVehicleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setFormError(null);
         try {
-            await createVehicle({
+            const newVehicle = await createVehicle({
                 brand: vehicleForm.brand,
                 model: vehicleForm.model,
                 year: Number(vehicleForm.year),
@@ -69,7 +70,16 @@ const AdminPage: React.FC = () => {
                 type: vehicleForm.type as 'sale' | 'rental',
                 description: vehicleForm.description || undefined,
             });
+
+            // Upload de la photo si un fichier est sélectionné
+            if (photoFile && newVehicle.id) {
+                const formData = new FormData();
+                formData.append('photo', photoFile);
+                await uploadVehiclePhoto(newVehicle.id, formData);
+            }
+
             setFormSuccess(true);
+            setPhotoFile(null);
             setVehicleForm({ brand: '', model: '', year: '', kilometrage: '', price: '', type: 'sale', description: '' });
             setShowForm(false);
             loadData();
@@ -267,6 +277,16 @@ const AdminPage: React.FC = () => {
                                             onChange={(e) => setVehicleForm({ ...vehicleForm, description: e.target.value })}
                                             className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
                                         />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="block text-sm text-gray-700 mb-1">Photo (optionnel)</label>
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png"
+                                            onChange={(e) => setPhotoFile(e.target.files?.[0] || null)}
+                                            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                                        />
+                                        <p className="text-xs text-gray-400 mt-1">JPG ou PNG, 5 Mo maximum.</p>
                                     </div>
                                     <div className="col-span-2">
                                         <button

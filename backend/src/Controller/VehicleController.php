@@ -139,4 +139,44 @@ class VehicleController extends AbstractController
             "isAvailable" => $vehicle->isAvailable(),
         ];
     }
+    /**
+     * Upload d une photo pour un véhicule (admin uniquement).
+     */
+    #[Route("/{id}/upload-photo", name: "upload_photo", methods: ["POST"])]
+    #[IsGranted("ROLE_ADMIN")]
+    public function uploadPhoto(int $id, Request $request): JsonResponse
+    {
+        $vehicle = $this->vehicleRepository->find($id);
+        if (!$vehicle) {
+            return $this->json(["message" => "Vehicule non trouve"], 404);
+        }
+
+        $file = $request->files->get("photo");
+        if (!$file) {
+            return $this->json(["message" => "Aucun fichier fourni"], 400);
+        }
+
+        $allowedMimes = ["image/jpeg", "image/png", "image/jpg"];
+        if (!in_array($file->getMimeType(), $allowedMimes)) {
+            return $this->json(["message" => "Format non accepte. JPG et PNG uniquement."], 400);
+        }
+
+        if ($file->getSize() > 5 * 1024 * 1024) {
+            return $this->json(["message" => "Fichier trop volumineux. 5 Mo maximum."], 400);
+        }
+
+        $filename = uniqid("vehicle_") . "." . $file->getClientOriginalExtension();
+        $uploadDir = $this->getParameter("kernel.project_dir") . "/public/uploads/vehicles";
+        $file->move($uploadDir, $filename);
+
+        $photoUrl = "/uploads/vehicles/" . $filename;
+        $vehicle->setPhotoUrl($photoUrl);
+        $this->entityManager->flush();
+
+        return $this->json([
+            "message" => "Photo uploadee avec succes",
+            "photoUrl" => $photoUrl,
+            "vehicle" => $this->formatVehicle($vehicle)
+        ]);
+    }
 }
