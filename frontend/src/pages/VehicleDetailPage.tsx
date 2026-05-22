@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Vehicle } from '../types';
 import { getVehicle } from '../services/vehicleService';
 import { createDossier } from '../services/dossierService';
+import { uploadDocument } from '../services/documentService';
 import { useAuth } from '../context/AuthContext';
 
 /**
  * Page de détail d'un véhicule avec formulaire de dépôt de dossier.
- * Permet au client de soumettre un dossier d'achat ou de location.
+ * Permet au client de soumettre un dossier avec ses documents justificatifs.
  */
 const VehicleDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -20,6 +21,14 @@ const VehicleDetailPage: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const [dossierType, setDossierType] = useState<'purchase' | 'rental'>('purchase');
+
+    // Documents à joindre au dossier
+    const [documents, setDocuments] = useState<{ type: string; file: File | null }[]>([
+        { type: 'cni', file: null },
+        { type: 'justificatif_domicile', file: null },
+        { type: 'fiche_paie', file: null },
+        { type: 'rib', file: null },
+    ]);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -45,14 +54,50 @@ const VehicleDetailPage: React.FC = () => {
     };
 
     /**
-     * Soumet le dossier d'achat ou de location.
+     * Met à jour le fichier sélectionné pour un type de document.
+     */
+    const handleFileChange = (index: number, file: File | null) => {
+        const updated = [...documents];
+        updated[index].file = file;
+        setDocuments(updated);
+    };
+
+    /**
+     * Retourne le label français pour un type de document.
+     */
+    const getDocumentLabel = (type: string): string => {
+        switch (type) {
+            case 'cni': return 'Carte nationale d\'identité';
+            case 'justificatif_domicile': return 'Justificatif de domicile';
+            case 'fiche_paie': return 'Fiche de paie';
+            case 'rib': return 'RIB';
+            default: return type;
+        }
+    };
+
+    /**
+     * Soumet le dossier avec les documents joints.
      */
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
         setError(null);
+
         try {
-            await createDossier(Number(id), dossierType);
+            // Création du dossier
+            const dossier = await createDossier(Number(id), dossierType);
+
+            // Upload des documents sélectionnés
+            const uploadPromises = documents
+                .filter(doc => doc.file !== null)
+                .map(doc => {
+                    const formData = new FormData();
+                    formData.append('document', doc.file!);
+                    formData.append('type', doc.type);
+                    return uploadDocument(dossier.id, formData);
+                });
+
+            await Promise.all(uploadPromises);
             setSuccess(true);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Erreur lors de la soumission du dossier.');
@@ -100,10 +145,10 @@ const VehicleDetailPage: React.FC = () => {
             <div className="max-w-4xl mx-auto p-8">
                 {vehicle && (
                     <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                        {/* Photo */}
+                        {/* Photo du véhicule */}
                         {vehicle.photoUrl ? (
                             <img
-                                src={vehicle.photoUrl}
+                                src={`http://localhost:8000${vehicle.photoUrl}`}
                                 alt={`${vehicle.brand} ${vehicle.model}`}
                                 className="w-full h-64 object-cover"
                             />
@@ -170,10 +215,9 @@ const VehicleDetailPage: React.FC = () => {
                                         </div>
                                     )}
 
-                                    <div className="mb-4">
-                                        <label className="block text-sm text-gray-700 mb-2">
-                                            Type de dossier
-                                        </label>
+                                    {/* Type de dossier */}
+                                    <div className="mb-6">
+                                        <label className="block text-sm text-gray-700 mb-2">Type de dossier</label>
                                         <div className="flex gap-4">
                                             <label className="flex items-center gap-2 cursor-pointer">
                                                 <input
@@ -195,6 +239,34 @@ const VehicleDetailPage: React.FC = () => {
                                                 />
                                                 <span className="text-sm">Location longue durée</span>
                                             </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Documents justificatifs */}
+                                    <div className="mb-6">
+                                        <h4 className="text-sm font-medium text-gray-700 mb-3">
+                                            Documents justificatifs
+                                            <span className="text-gray-400 font-normal ml-2">(PDF, JPG ou PNG, 10 Mo max)</span>
+                                        </h4>
+                                        <div className="space-y-3">
+                                            {documents.map((doc, index) => (
+                                                <div key={doc.type} className="flex items-center gap-4">
+                                                    <label className="w-56 text-sm text-gray-600 shrink-0">
+                                                        {getDocumentLabel(doc.type)}
+                                                    </label>
+                                                    <input
+                                                        type="file"
+                                                        accept=".pdf,.jpg,.jpeg,.png"
+                                                        onChange={(e) => handleFileChange(index, e.target.files?.[0] || null)}
+                                                        className="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-primary"
+                                                    />
+                                                    {doc.file && (
+                                                        <span className="text-green-500 text-xs shrink-0">
+                                                            Sélectionné
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
 
