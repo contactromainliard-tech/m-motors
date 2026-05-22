@@ -67,6 +67,14 @@ const VehiclesPage: React.FC = () => {
                                     Mes dossiers
                                 </button>
                             )}
+                            {!isAdmin && (
+                                <button
+                                    onClick={() => navigate('/account')}
+                                    className="px-4 py-2 text-sm border border-white rounded hover:bg-white hover:text-primary transition"
+                                >
+                                    Mon compte
+                                </button>
+                            )}
                             {isAdmin && (
                                 <button
                                     onClick={() => navigate('/admin')}
