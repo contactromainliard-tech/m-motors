@@ -14,10 +14,3 @@ export const uploadDocument = async (dossierId: number, formData: FormData) => {
     return response.data;
 };
 
-/**
- * Récupère la liste des documents d un dossier.
- */
-export const getDocumentsByDossier = async (dossierId: number) => {
-    const response = await api.get(`/documents/dossier/${dossierId}`);
-    return response.data;
-};
