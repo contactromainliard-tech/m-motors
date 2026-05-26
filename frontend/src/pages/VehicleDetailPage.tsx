@@ -81,6 +81,14 @@ const VehicleDetailPage: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        // Validation taille des fichiers (1 Mo max en prod)
+        const maxSize = 1024 * 1024; // 1 Mo
+        const oversizedFiles = documents.filter(doc => doc.file && doc.file.size > maxSize);
+        if (oversizedFiles.length > 0) {
+            setError('Chaque document doit faire moins de 1 Mo.');
+            setIsSubmitting(false);
+            return;
+        }
         setError(null);
 
         try {
@@ -246,7 +254,7 @@ const VehicleDetailPage: React.FC = () => {
                                     <div className="mb-6">
                                         <h4 className="text-sm font-medium text-gray-700 mb-3">
                                             Documents justificatifs
-                                            <span className="text-gray-400 font-normal ml-2">(PDF, JPG ou PNG, 10 Mo max)</span>
+                                            <span className="text-gray-400 font-normal ml-2">(PDF, JPG ou PNG, 1 Mo max)</span>
                                         </h4>
                                         <div className="space-y-3">
                                             {documents.map((doc, index) => (
