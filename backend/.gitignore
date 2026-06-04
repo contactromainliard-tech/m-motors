@@ -16,4 +16,9 @@
 ###> phpunit/phpunit ###
 /phpunit.xml
 /.phpunit.cache/
+/coverage/
 ###< phpunit/phpunit ###
+
+###> uploads utilisateurs (fichiers runtime, non versionnés) ###
+/public/uploads/
+###< uploads utilisateurs ###
