@@ -135,4 +135,55 @@ class AuthControllerTest extends WebTestCase
         $this->assertEquals("Paris", $data["user"]["city"]);
         $this->assertEquals("75001", $data["user"]["zipCode"]);
     }
+
+    public function testRegisterMissingFields(): void
+    {
+        $this->client->request("POST", "/api/auth/register", [], [], [
+            "CONTENT_TYPE" => "application/json",
+        ], json_encode(["email" => "test@test.fr"]));
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testRegisterInvalidEmail(): void
+    {
+        $this->client->request("POST", "/api/auth/register", [], [], [
+            "CONTENT_TYPE" => "application/json",
+        ], json_encode([
+            "email" => "not-an-email",
+            "password" => "Test1234!",
+            "firstName" => "Jean",
+            "lastName" => "Dupont",
+        ]));
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testRegisterShortPassword(): void
+    {
+        $this->client->request("POST", "/api/auth/register", [], [], [
+            "CONTENT_TYPE" => "application/json",
+        ], json_encode([
+            "email" => "valid@test.fr",
+            "password" => "abc",
+            "firstName" => "Jean",
+            "lastName" => "Dupont",
+        ]));
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testRegisterShortName(): void
+    {
+        $this->client->request("POST", "/api/auth/register", [], [], [
+            "CONTENT_TYPE" => "application/json",
+        ], json_encode([
+            "email" => "valid@test.fr",
+            "password" => "Test1234!",
+            "firstName" => "J",
+            "lastName" => "Dupont",
+        ]));
+
+        $this->assertResponseStatusCodeSame(422);
+    }
 }

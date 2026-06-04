@@ -17,6 +17,7 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "^7.2",
         "symfony/mime": "^7.2",
+        "symfony/monolog-bundle": "*",
         "symfony/property-access": "^7.2",
         "symfony/property-info": "^7.2",
         "symfony/runtime": "^7.2",

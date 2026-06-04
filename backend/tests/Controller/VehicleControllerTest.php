@@ -179,4 +179,192 @@ class VehicleControllerTest extends WebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals("rental", $data["vehicle"]["type"]);
     }
+
+    public function testShowVehicle(): void
+    {
+        $this->client->request("POST", "/api/vehicles", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode([
+            "brand" => "Citroen", "model" => "C3",
+            "year" => 2022, "kilometrage" => 18000,
+            "price" => 15000, "type" => "sale",
+        ]));
+        $vehicle = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->client->request("GET", "/api/vehicles/" . $vehicle["id"]);
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("Citroen", $data["brand"]);
+        $this->assertEquals("C3", $data["model"]);
+    }
+
+    public function testShowVehicleNotFound(): void
+    {
+        $this->client->request("GET", "/api/vehicles/99999");
+        $this->assertResponseStatusCodeSame(404);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("Vehicule non trouve", $data["message"]);
+    }
+
+    public function testListVehiclesWithFilters(): void
+    {
+        $this->client->request("POST", "/api/vehicles", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode([
+            "brand" => "BMW", "model" => "Serie 3",
+            "year" => 2020, "kilometrage" => 40000,
+            "price" => 25000, "type" => "sale",
+        ]));
+
+        $this->client->request("GET", "/api/vehicles?type=sale&brand=BMW&maxPrice=30000&maxKilometrage=50000");
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertIsArray($data);
+    }
+
+    public function testDeleteVehicleWithDossier(): void
+    {
+        // Creer client + dossier pour bloquer la suppression
+        $this->client->request("POST", "/api/auth/register", [], [], [
+            "CONTENT_TYPE" => "application/json",
+        ], json_encode([
+            "email" => "client2@test.fr", "password" => "Test1234!",
+            "firstName" => "Client", "lastName" => "Test",
+        ]));
+        $this->client->request("POST", "/api/auth/login", [], [], [
+            "CONTENT_TYPE" => "application/json",
+        ], json_encode(["email" => "client2@test.fr", "password" => "Test1234!"]));
+        $loginData = json_decode($this->client->getResponse()->getContent(), true);
+        $clientToken = $loginData["token"];
+
+        $this->client->request("POST", "/api/vehicles", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode([
+            "brand" => "Honda", "model" => "Civic",
+            "year" => 2021, "kilometrage" => 22000,
+            "price" => 16000, "type" => "sale",
+        ]));
+        $vehicle = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $clientToken,
+        ], json_encode(["vehicleId" => $vehicle["id"], "type" => "purchase"]));
+
+        // Tenter la suppression — doit echouer (409)
+        $this->client->request("DELETE", "/api/vehicles/" . $vehicle["id"], [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+
+        $this->assertResponseStatusCodeSame(409);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertStringContainsString("dossiers associes", $data["message"]);
+    }
+
+    public function testToggleVehicleTypeNotFound(): void
+    {
+        $this->client->request("PATCH", "/api/vehicles/99999/toggle-type", [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testCreateVehicleInvalidJson(): void
+    {
+        $this->client->request("POST", "/api/vehicles", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], "not valid json");
+
+        $this->assertResponseStatusCodeSame(400);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("Donnees invalides", $data["message"]);
+    }
+
+    public function testUpdateVehicleNotFound(): void
+    {
+        $this->client->request("PUT", "/api/vehicles/99999", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode(["price" => 10000]));
+
+        $this->assertResponseStatusCodeSame(404);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("Vehicule non trouve", $data["message"]);
+    }
+
+    public function testUploadPhotoVehicleNotFound(): void
+    {
+        $this->client->request("POST", "/api/vehicles/99999/upload-photo", [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testUploadPhotoNoFile(): void
+    {
+        $this->client->request("POST", "/api/vehicles", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode([
+            "brand" => "Audi", "model" => "A3",
+            "year" => 2023, "kilometrage" => 5000,
+            "price" => 32000, "type" => "sale",
+        ]));
+        $vehicle = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->client->request("POST", "/api/vehicles/" . $vehicle["id"] . "/upload-photo", [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("Aucun fichier fourni", $data["message"]);
+    }
+
+    public function testUploadPhotoWithRealImage(): void
+    {
+        $uploadDir = static::getContainer()->getParameter("kernel.project_dir") . "/public/uploads/vehicles";
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $this->client->request("POST", "/api/vehicles", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode([
+            "brand" => "Audi", "model" => "A4",
+            "year" => 2022, "kilometrage" => 15000,
+            "price" => 38000, "type" => "sale",
+        ]));
+        $vehicle = json_decode($this->client->getResponse()->getContent(), true);
+
+        // Creer une mini image JPEG valide (1x1 pixel)
+        $tmpFile = tempnam(sys_get_temp_dir(), "test_photo_");
+        $img = imagecreatetruecolor(1, 1);
+        imagejpeg($img, $tmpFile);
+        imagedestroy($img);
+
+        $uploadedFile = new \Symfony\Component\HttpFoundation\File\UploadedFile(
+            $tmpFile, "photo.jpg", "image/jpeg", null, true
+        );
+
+        $this->client->request(
+            "POST",
+            "/api/vehicles/" . $vehicle["id"] . "/upload-photo",
+            [],
+            ["photo" => $uploadedFile],
+            ["HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken]
+        );
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("Photo uploadee avec succes", $data["message"]);
+        $this->assertArrayHasKey("photoUrl", $data);
+    }
 }

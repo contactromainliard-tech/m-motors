@@ -189,4 +189,111 @@ class DossierControllerTest extends WebTestCase
         $data = json_decode($this->client->getResponse()->getContent(), true);
         $this->assertEquals("in_progress", $data["status"]);
     }
+
+    public function testGetAllDossiersAsAdmin(): void
+    {
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->clientToken,
+        ], json_encode(["vehicleId" => $this->vehicleId, "type" => "purchase"]));
+
+        $this->client->request("GET", "/api/dossiers", [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertIsArray($data);
+        $this->assertGreaterThanOrEqual(1, count($data));
+    }
+
+    public function testShowDossierAsAdmin(): void
+    {
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->clientToken,
+        ], json_encode(["vehicleId" => $this->vehicleId, "type" => "purchase"]));
+        $dossier = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->client->request("GET", "/api/dossiers/" . $dossier["id"], [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals($dossier["id"], $data["id"]);
+    }
+
+    public function testShowDossierNotFound(): void
+    {
+        $this->client->request("GET", "/api/dossiers/99999", [], [], [
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ]);
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testValidateDossierRejected(): void
+    {
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->clientToken,
+        ], json_encode(["vehicleId" => $this->vehicleId, "type" => "purchase"]));
+        $dossier = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->client->request("PATCH", "/api/dossiers/" . $dossier["id"] . "/validate", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode(["status" => "rejected", "comment" => "Documents insuffisants."]));
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertEquals("rejected", $data["status"]);
+        $this->assertEquals("Documents insuffisants.", $data["comment"]);
+    }
+
+    public function testValidateDossierInvalidStatus(): void
+    {
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->clientToken,
+        ], json_encode(["vehicleId" => $this->vehicleId, "type" => "purchase"]));
+        $dossier = json_decode($this->client->getResponse()->getContent(), true);
+
+        $this->client->request("PATCH", "/api/dossiers/" . $dossier["id"] . "/validate", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode(["status" => "invalid_status"]));
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testCreateDossierVehicleNotFound(): void
+    {
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->clientToken,
+        ], json_encode(["vehicleId" => 99999, "type" => "purchase"]));
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testCreateDossierInvalidData(): void
+    {
+        $this->client->request("POST", "/api/dossiers", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->clientToken,
+        ], "not valid json");
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testValidateDossierNotFound(): void
+    {
+        $this->client->request("PATCH", "/api/dossiers/99999/validate", [], [], [
+            "CONTENT_TYPE" => "application/json",
+            "HTTP_AUTHORIZATION" => "Bearer " . $this->adminToken,
+        ], json_encode(["status" => "approved"]));
+
+        $this->assertResponseStatusCodeSame(404);
+    }
 }
