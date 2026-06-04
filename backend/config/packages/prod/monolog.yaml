@@ -1,5 +1,6 @@
 monolog:
     handlers:
+        # Handler principal : déclenche sur ERROR, buffer les entrées précédentes pour contexte
         main:
             type: fingers_crossed
             action_level: error
@@ -12,3 +13,29 @@ monolog:
             path: "%kernel.logs_dir%/prod.log"
             level: debug
             max_files: 14
+
+        # Canal d alerte email : déclenche uniquement sur CRITICAL
+        # Envoie un email contenant les 50 dernières lignes de log pour contexte
+        alert:
+            type: fingers_crossed
+            action_level: critical
+            handler: alert_mailer
+            stop_buffering: false
+            buffer_size: 50
+
+        alert_mailer:
+            type: native_mailer
+            from_email: '%env(ALERT_FROM_EMAIL)%'
+            to_email: '%env(ALERT_TO_EMAIL)%'
+            subject: '[M-Motors PROD] Alerte CRITIQUE — Application en erreur'
+            level: debug
+            formatter: monolog.formatter.html
+            content_type: text/html
+
+        # Log séparé pour les événements de sécurité (auth JWT, tentatives échouées)
+        security_prod:
+            type: rotating_file
+            path: "%kernel.logs_dir%/security.log"
+            level: warning
+            channels: [security]
+            max_files: 30
